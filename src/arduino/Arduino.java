@@ -3,6 +3,7 @@ package arduino;
 import java.awt.Dimension;
 import java.io.PrintWriter;
 import java.util.Scanner;
+import java.util.function.Consumer;
 
 import com.fazecast.jSerialComm.*;
 
@@ -11,7 +12,6 @@ public class Arduino {
 	private SerialPort comPort;
 	private String portDescription;
 	private int baud_rate;
-	
 	public Arduino() {
 		//empty constructor if port undecided
 	}
@@ -96,6 +96,26 @@ public class Arduino {
 		   	in.close();
 		} catch (Exception e) { e.printStackTrace(); }
 		return out;
+	}
+
+	public String serialRead(String separator, Consumer<String> onMessageReceived){
+		comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+		StringBuilder out= new StringBuilder();
+		Scanner in = new Scanner(comPort.getInputStream());
+		try
+		{
+			while(in.hasNext()){
+				String next = in.next();
+				if (next.equals(separator)){
+					onMessageReceived.accept(out.toString());
+					out = new StringBuilder();
+					continue;
+				}
+				out.append(next);
+			}
+			in.close();
+		} catch (Exception e) { e.printStackTrace(); }
+		return out.toString();
 	}
 	
 	public void serialWrite(String s){
